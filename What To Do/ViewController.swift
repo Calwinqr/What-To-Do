@@ -16,10 +16,10 @@ class ToDoListViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-//        tasks.append(task(name: "Brush"))
-//        tasks.append(task(name: "Go to the gym"))
-//        tasks.append(task(name: "Have a bath"))
+        load()
+        //        tasks.append(task(name: "Brush"))
+        //        tasks.append(task(name: "Go to the gym"))
+        //        tasks.append(task(name: "Have a bath"))
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -65,13 +65,22 @@ class ToDoListViewController: UITableViewController {
     func saveItems() {
         
         do {
-          try context.save()
+            try context.save()
         } catch {
-           print("Error saving context \(error)")
+            print("Error saving context \(error)")
         }
         
         self.tableView.reloadData()
     }
-
+    
+    func load()
+    {
+        let request: NSFetchRequest<Task> = Task.fetchRequest()
+        do{
+            tasks = try context.fetch(request)
+        }catch{
+            print(error)
+        }
+    }
 }
 
