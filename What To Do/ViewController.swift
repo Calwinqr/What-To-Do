@@ -8,7 +8,7 @@
 import UIKit
 import CoreData
 
-class ToDoListViewController: UITableViewController {
+class ToDoListViewController: UITableViewController{
     
     var tasks=[Task]()
     
@@ -73,14 +73,31 @@ class ToDoListViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
-    func load()
+    func load(with request: NSFetchRequest<Task> = Task.fetchRequest())
     {
-        let request: NSFetchRequest<Task> = Task.fetchRequest()
         do{
             tasks = try context.fetch(request)
         }catch{
             print(error)
         }
+        tableView.reloadData()
     }
 }
 
+extension ToDoListViewController: UISearchBarDelegate{
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request: NSFetchRequest<Task>=Task.fetchRequest()
+        request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
+        request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
+        load(with: request)
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchBar.text?.count==0{
+            load()
+            DispatchQueue.main.async{
+                searchBar.resignFirstResponder()
+            }
+        }
+    }
+}
