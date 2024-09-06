@@ -14,12 +14,14 @@ class ToDoListViewController: UITableViewController{
     
     let context=(UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
+    var selectedCategory: Category? {
+        didSet{
+            load()
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        load()
-        //        tasks.append(task(name: "Brush"))
-        //        tasks.append(task(name: "Go to the gym"))
-        //        tasks.append(task(name: "Have a bath"))
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -39,7 +41,6 @@ class ToDoListViewController: UITableViewController{
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
         tasks[indexPath.row].isDone = !tasks[indexPath.row].isDone
         saveItems()
         tableView.deselectRow(at: indexPath, animated: true)
@@ -50,6 +51,7 @@ class ToDoListViewController: UITableViewController{
         let action=UIAlertAction(title: "Add Task", style: .default){(action) in
             let newTask = Task(context: self.context)
             newTask.name=textField.text!
+            newTask.parentCategory=self.selectedCategory
             self.tasks.append(newTask)
             self.saveItems()
         }
@@ -73,8 +75,16 @@ class ToDoListViewController: UITableViewController{
         self.tableView.reloadData()
     }
     
-    func load(with request: NSFetchRequest<Task> = Task.fetchRequest())
+    func load(with request: NSFetchRequest<Task> = Task.fetchRequest(),predicate: NSPredicate? = nil)
     {
+        let categoryPredicate=NSPredicate(format: "parentCategory.title MATCHES %@", (selectedCategory?.title)!)
+        if let additinalPredicate=predicate{
+            let compoundPredicate=NSCompoundPredicate(andPredicateWithSubpredicates: [additinalPredicate, categoryPredicate])
+            request.predicate=compoundPredicate
+        }
+        else{
+            request.predicate=categoryPredicate
+        }
         do{
             tasks = try context.fetch(request)
         }catch{
@@ -87,9 +97,9 @@ class ToDoListViewController: UITableViewController{
 extension ToDoListViewController: UISearchBarDelegate{
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         let request: NSFetchRequest<Task>=Task.fetchRequest()
-        request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
+        let predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
         request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        load(with: request)
+        load(with: request, predicate: predicate)
     }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
